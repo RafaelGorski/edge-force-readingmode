@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200">
+  <rect width="640" height="200" fill="#f0ece3"/>
+  <g fill="none" stroke="#0a66c2" stroke-width="2">
+    <rect x="270" y="20" width="100" height="40" rx="6"/>
+    <rect x="120" y="120" width="100" height="40" rx="6"/>
+    <rect x="270" y="120" width="100" height="40" rx="6"/>
+    <rect x="420" y="120" width="100" height="40" rx="6"/>
+    <path d="M320 60 L170 120 M320 60 L320 120 M320 60 L470 120"/>
+  </g>
+  <text x="320" y="46" text-anchor="middle" font-family="Arial" font-size="14" fill="#0a66c2">Competence</text>
+  <text x="170" y="146" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">sub-skill</text>
+  <text x="320" y="146" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">sub-skill</text>
+  <text x="470" y="146" text-anchor="middle" font-family="Arial" font-size="12" fill="#333">sub-skill</text>
+</svg>
