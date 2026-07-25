@@ -46,13 +46,17 @@ extension/
   manifest.json     MV3 manifest (content script on <all_urls>, Alt+R command, toolbar action)
   background.js      Service worker: routes toolbar/command clicks to the active tab
   content.js         Extract with Readability -> sanitize -> render in a Shadow DOM overlay
+  purify.js          Vendored DOMPurify (Apache-2.0 / MPL-2.0) — HTML sanitizer
   Readability.js     Vendored Mozilla Readability (Apache-2.0)
 ```
 
 The content script clones the live DOM (so the page isn't mutated), runs Readability on
-the clone, sanitizes the result (drops scripts/iframes/handlers), resolves relative image
-and link URLs to absolute, and mounts everything inside an isolated Shadow DOM overlay.
-A heuristic "largest text block" fallback covers the rare pages Readability can't parse.
+the clone, sanitizes the result with **DOMPurify** (an allowlist sanitizer that strips
+scripts, event handlers, inline styles and dangerous URL schemes — including namespaced
+`xlink:href` and mutation‑XSS vectors), resolves relative image/link URLs to absolute
+while enforcing an `http(s)`‑only scheme allowlist, and mounts everything inside an
+isolated Shadow DOM overlay. A heuristic "largest text block" fallback covers the rare
+pages Readability can't parse.
 
 ### Trigger it from code / automation
 
@@ -89,4 +93,5 @@ node tests/capture-demo.js    # launches Edge, activates reading mode, screensho
 
 ## License
 
-Readability.js is © Mozilla, Apache‑2.0. The rest of this project is provided as‑is.
+Readability.js is © Mozilla (Apache‑2.0). DOMPurify is © Cure53 (Apache‑2.0 / MPL‑2.0).
+The rest of this project is provided as‑is.

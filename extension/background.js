@@ -11,7 +11,7 @@ async function triggerReadingMode(tab) {
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ["Readability.js", "content.js"],
+        files: ["purify.js", "Readability.js", "content.js"],
       });
       await chrome.tabs.sendMessage(tab.id, { type: "FRM_TOGGLE" });
     } catch (err2) {

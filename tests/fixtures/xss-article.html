@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Reader XSS Regression | PulseSim</title>
+  <meta name="author" content="Security Fixture" />
+</head>
+<body>
+  <header><a href="/home">Home</a></header>
+  <div class="center" data-native-reader="disabled">
+    <div class="article-shell">
+      <div class="headline">Reader XSS Regression Article</div>
+      <div class="article-body">
+        <p>This article exists to verify that the reading mode overlay never turns
+          attacker-authored markup into executable script. The paragraphs below are
+          long enough that Readability keeps this container as the main article, and
+          they surround a series of deliberately malicious inline elements that a
+          hostile author might publish on a platform such as LinkedIn.</p>
+
+        <p>A robust reader must neutralize every one of these vectors before it renders
+          them into the page's own origin. The overlay uses an open Shadow DOM attached
+          to the document, so a single surviving <code>javascript:</code> URL or inline
+          event handler would run with the trusted site's cookies and session.</p>
+
+        <!-- Vector 1: plain javascript: URL -->
+        <p><a id="v-plain" href="javascript:window.__frmXss=(window.__frmXss||0)+1">plain js link</a></p>
+
+        <!-- Vector 2: obfuscated javascript: URL (tab inside the scheme) -->
+        <p><a id="v-obf" href="jav&#9;ascript:window.__frmXss=(window.__frmXss||0)+1">obfuscated js link</a></p>
+
+        <!-- Vector 3: inline event handler on an image -->
+        <p><img id="v-onerror" src="x-does-not-exist" onerror="window.__frmXss=(window.__frmXss||0)+1" alt="broken" /></p>
+
+        <!-- Vector 4: CSS exfiltration via inline style -->
+        <p id="v-style" style="background:url(http://127.0.0.1:5178/assets/should-not-load-beacon.png)">styled paragraph with a tracking beacon</p>
+
+        <!-- Vector 5: namespaced xlink:href javascript in SVG -->
+        <p><svg width="20" height="20"><a xlink:href="javascript:window.__frmXss=(window.__frmXss||0)+1"><text x="0" y="15">svg</text></a></svg></p>
+
+        <p>Following the malicious block, more ordinary prose keeps the article score
+          high so the extraction engine does not discard the section. Skill, craft, and
+          careful engineering all depend on treating security as a property you design
+          in rather than one you hope for. The reader should show this text cleanly.</p>
+
+        <!-- A legitimate image that MUST survive sanitization -->
+        <figure>
+          <img id="v-benign" src="assets/diagram.svg" width="640" height="200" alt="a safe diagram" />
+          <figcaption>A safe inline image that reading mode should keep.</figcaption>
+        </figure>
+
+        <p>Finally, one more paragraph of honest content so the container clearly reads
+          as an article: legible sub-skills, honest instruments, and a training loop that
+          keeps every strand of the rope under tension. That is the quiet promise here.</p>
+      </div>
+    </div>
+  </div>
+  <footer><a href="/about">About</a></footer>
+</body>
+</html>
