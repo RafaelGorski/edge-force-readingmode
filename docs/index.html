@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Force Reading Mode — a reader view for pages that block it</title>
+  <meta name="description" content="A Microsoft Edge extension that gives any page a clean, image-friendly reading view — even sites like LinkedIn where the built-in reader refuses to turn on." />
+  <meta property="og:title" content="Force Reading Mode" />
+  <meta property="og:description" content="A clean reading view for any page, even ones that block Edge's native reader." />
+  <meta property="og:image" content="preview.png" />
+  <style>
+    :root {
+      --paper: #faf8f3;
+      --paper-2: #f3eee3;
+      --ink: #201b14;
+      --ink-soft: #5c5348;
+      --line: #e2d9c8;
+      --accent: #b3541e;      /* warm terracotta */
+      --accent-ink: #8a3f14;
+      --spruce: #1f5d54;      /* deep teal, secondary */
+      --display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --body: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent-ink); }
+    .wrap { width: min(1080px, 92vw); margin: 0 auto; }
+
+    /* Header */
+    header.site {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-family: var(--display);
+      font-size: 20px; font-weight: 600; letter-spacing: .01em; }
+    .brand svg { display: block; }
+    nav.top a { margin-left: 22px; text-decoration: none; color: var(--ink-soft);
+      font-size: 15px; font-weight: 500; }
+    nav.top a:hover { color: var(--ink); }
+
+    /* Hero */
+    .hero { padding: 40px 0 8px; display: grid; grid-template-columns: 1.05fr 1fr;
+      gap: 52px; align-items: center; }
+    .eyebrow { display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--accent-ink); background: #f2e3d6;
+      padding: 6px 12px; border-radius: 999px; }
+    .hero h1 { font-family: var(--display); font-weight: 600; font-size: clamp(2.5rem, 5vw, 3.9rem);
+      line-height: 1.05; margin: 20px 0 14px; letter-spacing: -0.01em; }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .hero p.lead { font-size: 1.2rem; color: var(--ink-soft); margin: 0 0 28px; max-width: 46ch; }
+    .cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 9px; font: inherit; font-weight: 600;
+      font-size: 1rem; padding: 13px 22px; border-radius: 10px; text-decoration: none;
+      border: 1px solid transparent; cursor: pointer; transition: transform .08s ease, box-shadow .2s ease; }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 8px 20px -8px rgba(179,84,30,.7); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -8px rgba(179,84,30,.8); }
+    .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+    .btn-ghost:hover { border-color: #cbbfa8; background: #fff; }
+    .kbd-hint { font-size: .95rem; color: var(--ink-soft); }
+    kbd { font-family: var(--body); font-size: .85em; font-weight: 600; background: #fff;
+      border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+      padding: 2px 8px; color: var(--ink); }
+
+    /* Browser frame screenshot */
+    .frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+      background: #fff; box-shadow: 0 30px 60px -30px rgba(32,27,20,.4); }
+    .frame .bar { display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+      background: var(--paper-2); border-bottom: 1px solid var(--line); }
+    .frame .dot { width: 11px; height: 11px; border-radius: 50%; background: #d9cdb6; }
+    .frame .addr { flex: 1; margin-left: 10px; font-size: 12.5px; color: var(--ink-soft);
+      background: #fff; border: 1px solid var(--line); border-radius: 7px; padding: 5px 12px; }
+    .frame img { display: block; width: 100%; height: auto; }
+
+    /* Sections */
+    section { padding: 68px 0; }
+    section h2 { font-family: var(--display); font-weight: 600; font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      margin: 0 0 10px; letter-spacing: -0.01em; }
+    section .sub { color: var(--ink-soft); font-size: 1.1rem; margin: 0 0 40px; max-width: 60ch; }
+    .rule { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+    /* Feature cards — icon on top, hairline + soft shadow (no side-tab borders) */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px;
+      box-shadow: 0 1px 0 rgba(32,27,20,.03); }
+    .card .ic { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 10px;
+      background: #f2e3d6; color: var(--accent-ink); margin-bottom: 16px; }
+    .card h3 { font-family: var(--display); font-size: 1.25rem; margin: 0 0 8px; font-weight: 600; }
+    .card p { margin: 0; color: var(--ink-soft); font-size: .98rem; }
+
+    /* Install steps */
+    .steps { counter-reset: step; display: grid; gap: 18px; max-width: 760px; }
+    .step { display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+    .step .n { counter-increment: step; width: 44px; height: 44px; border-radius: 50%;
+      background: var(--spruce); color: #fff; font-family: var(--display); font-size: 1.25rem;
+      font-weight: 600; display: grid; place-items: center; }
+    .step .n::before { content: counter(step); }
+    .step h3 { margin: 4px 0 4px; font-size: 1.08rem; }
+    .step p { margin: 0; color: var(--ink-soft); }
+    code.inline { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: .9em;
+      background: var(--paper-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; }
+
+    /* Note band */
+    .band { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .band .inner { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .band h2 { margin-top: 0; }
+    .band ul { margin: 0; padding-left: 1.1em; color: var(--ink-soft); }
+    .band li { margin: .5em 0; }
+
+    footer.site { padding: 40px 0 60px; color: var(--ink-soft); font-size: .95rem;
+      display: flex; flex-wrap: wrap; gap: 12px 26px; align-items: center; justify-content: space-between; }
+    footer.site a { color: var(--ink-soft); text-decoration: none; }
+    footer.site a:hover { color: var(--ink); }
+    .footer-links a { margin-left: 20px; }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; gap: 34px; padding-top: 20px; }
+      .features { grid-template-columns: 1fr; }
+      .band .inner { grid-template-columns: 1fr; gap: 22px; }
+      nav.top { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site">
+      <div class="brand">
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M16 7c-2.5-1.6-5.5-2-9-1.6v18c3.5-.4 6.5 0 9 1.6 2.5-1.6 5.5-2 9-1.6v-18c-3.5-.4-6.5 0-9 1.6Z"
+            fill="#f2e3d6" stroke="#b3541e" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M16 7v18" stroke="#b3541e" stroke-width="1.6"/>
+        </svg>
+        Force Reading Mode
+      </div>
+      <nav class="top">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/RafaelGorski/edge-force-readingmode">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" style="padding-top:24px">
+        <div>
+          <span class="eyebrow">Microsoft Edge extension</span>
+          <h1>Reading mode for pages that <em>won't allow it</em>.</h1>
+          <p class="lead">Some sites (LinkedIn articles are the classic case) are built so
+            Edge's built‑in reader (F9) never turns on. Force Reading Mode gives any page a
+            clean, calm, image‑friendly reading view anyway.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="https://github.com/RafaelGorski/edge-force-readingmode/releases/tag/v0.1">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Download v0.1
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/RafaelGorski/edge-force-readingmode">View source</a>
+            <span class="kbd-hint">then press <kbd>Alt</kbd> + <kbd>R</kbd></span>
+          </div>
+        </div>
+        <div class="frame">
+          <div class="bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="addr">reading mode · any article</span>
+          </div>
+          <img src="preview.png" width="1280" height="900"
+            alt="Force Reading Mode showing an article in a clean, centered reading view with a heading, byline and hero image" />
+        </div>
+      </section>
+
+      <hr class="rule" />
+
+      <section id="features">
+        <h2>Read anything, cleanly.</h2>
+        <p class="sub">It extracts the real article with Mozilla's Readability engine (the same
+          one behind Firefox Reader View) and renders it in an isolated overlay you control.</p>
+        <div class="features">
+          <article class="card">
+            <div class="ic" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3>Works where F9 won't</h3>
+            <p>Purpose‑built for pages that block the native reader. If you can see the words, you can read them in peace.</p>
+          </article>
+          <article class="card">
+            <div class="ic" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="m6 15 4-4 3 3 2-2 3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3>Keeps the images</h3>
+            <p>Figures, diagrams and photos come along for the ride, not just a wall of text.</p>
+          </article>
+          <article class="card">
+            <div class="ic" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 1 0 9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3>One keystroke</h3>
+            <p>Toolbar button, <kbd>Alt</kbd>+<kbd>R</kbd>, or <kbd>Esc</kbd> to leave. Adjustable text size, locked scroll.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <section>
+        <div class="inner">
+          <div>
+            <h2>Private &amp; safe by design</h2>
+            <p class="sub" style="margin-bottom:0">Everything happens locally in your browser. The
+              article HTML is sanitized with DOMPurify before it's ever shown, and only
+              <code class="inline">http(s)</code> resources are allowed through.</p>
+          </div>
+          <ul>
+            <li>No servers, no tracking, no account.</li>
+            <li>Scripts, inline styles and unsafe links are stripped.</li>
+            <li>Rendered in an isolated Shadow DOM overlay.</li>
+            <li>Open source — read every line on GitHub.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section id="install">
+      <h2>Install in a minute.</h2>
+      <p class="sub">It's an unpacked extension while in preview — no store needed.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="n"></div>
+          <div>
+            <h3>Get the files</h3>
+            <p>Download <a href="https://github.com/RafaelGorski/edge-force-readingmode/releases/tag/v0.1">v0.1</a>
+              and unzip it, or clone the repository.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n"></div>
+          <div>
+            <h3>Open the extensions page</h3>
+            <p>Go to <code class="inline">edge://extensions</code> and turn on <strong>Developer mode</strong>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n"></div>
+          <div>
+            <h3>Load unpacked</h3>
+            <p>Click <strong>Load unpacked</strong> and choose the <code class="inline">extension/</code> folder.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="n"></div>
+          <div>
+            <h3>Read</h3>
+            <p>Open any article and press <kbd>Alt</kbd> + <kbd>R</kbd>. That's it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap">
+    <hr class="rule" />
+    <footer class="site">
+      <span>Force Reading Mode · v0.1 · MIT‑spirited, open source.</span>
+      <span class="footer-links">
+        <a href="https://github.com/RafaelGorski/edge-force-readingmode">Repository</a>
+        <a href="https://github.com/RafaelGorski/edge-force-readingmode/releases/tag/v0.1">Release</a>
+        <a href="https://github.com/RafaelGorski/edge-force-readingmode/issues">Issues</a>
+      </span>
+    </footer>
+  </div>
+</body>
+</html>

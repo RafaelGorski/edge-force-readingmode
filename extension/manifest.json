@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Force Reading Mode",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Activate an Immersive Reader-style reading mode (with images) on any site, even ones that block Edge's native reader such as LinkedIn.",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
