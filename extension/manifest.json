@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Force Reading Mode",
+  "version": "1.0.0",
+  "description": "Activate an Immersive Reader-style reading mode (with images) on any site, even ones that block Edge's native reader such as LinkedIn.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle Reading Mode (Alt+R)"
+  },
+  "commands": {
+    "toggle-reading-mode": {
+      "suggested_key": {
+        "default": "Alt+R"
+      },
+      "description": "Toggle reading mode on the current page"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["Readability.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "edge-force-readingmode",
+  "version": "1.0.0",
+  "description": "Microsoft Edge extension that forces an Immersive Reader-style reading mode on any site, even ones that block the native reader (e.g. LinkedIn).",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0"
+  }
+}

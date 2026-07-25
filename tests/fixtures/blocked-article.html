@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Craft of Skill Engineering | PulseSim</title>
+  <meta name="author" content="Jordan Rivera" />
+  <meta property="og:site_name" content="PulseSim" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; color: #1c1c1c; }
+    .global-nav, .global-footer { background: #0a66c2; color: #fff; padding: 12px 20px; }
+    .global-nav a, .global-footer a { color: #fff; margin-right: 16px; text-decoration: none; }
+    .feed-layout { display: flex; gap: 20px; max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .left-rail, .right-rail { width: 220px; flex: none; font-size: 13px; color: #666; }
+    .center { flex: 1; }
+    .signin-wall { position: sticky; top: 0; background: #fff; border: 1px solid #ddd;
+      padding: 10px 16px; margin-bottom: 12px; }
+    .promo, .ad, .related { border: 1px solid #eee; padding: 10px; margin-bottom: 12px; }
+    .headline { font-size: 30px; font-weight: 700; margin: 8px 0; }
+    .author-row { color: #666; font-size: 14px; margin-bottom: 20px; }
+    .article-body p { line-height: 1.6; font-size: 16px; margin: 0 0 18px; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <!-- Chrome that a good reader mode must strip away -->
+  <header class="global-nav">
+    <a href="/home">Home</a><a href="/network">My Network</a><a href="/jobs">Jobs</a>
+    <a href="/messaging">Messaging</a><a href="/notifications">Notifications</a>
+  </header>
+
+  <div class="feed-layout">
+    <aside class="left-rail">
+      <div class="promo">Your profile is 80% complete. Add a skill to stand out.</div>
+      <div class="ad">Sponsored: Learn cloud certifications fast.</div>
+      <nav><a href="/a">Trending</a><a href="/b">Groups</a><a href="/c">Events</a></nav>
+    </aside>
+
+    <!-- The article is buried in non-semantic divs, no <article> element, and a
+         sign-in wall overlays it. This mirrors why Edge's native reader stays
+         disabled on such pages. -->
+    <div class="center reader-content-blocked" data-native-reader="disabled">
+      <div class="signin-wall" role="dialog" aria-label="Sign in">
+        <strong>Sign in to see more</strong> &mdash; join to read the full article.
+        <button type="button">Sign in</button>
+      </div>
+
+      <div class="article-shell">
+        <div class="article-header">
+          <figure class="cover">
+            <img src="assets/hero.svg" width="680" height="240" alt="Abstract cover art for the article" />
+          </figure>
+          <div class="headline">The Craft of Skill Engineering</div>
+          <div class="author-row">By Jordan Rivera &middot; 11 min read &middot; PulseSim</div>
+        </div>
+
+        <div class="article-body">
+          <p>Skill engineering treats capability as something you can deliberately design rather than
+            something you simply accumulate by accident. Instead of hoping that experience alone will
+            compound into mastery, the practitioner maps the terrain of a discipline, identifies the
+            load-bearing sub-skills, and then builds a training loop that exercises each one under
+            realistic pressure.</p>
+
+          <p>The first move is decomposition. Any nontrivial competence hides a lattice of smaller
+            competencies, and most people plateau because one weak strand quietly caps the whole rope.
+            By naming the strands explicitly, you convert a vague ambition into a set of concrete,
+            trainable targets that can each be measured and improved on their own schedule.</p>
+
+          <figure>
+            <img src="assets/diagram.svg" width="640" height="200" alt="A diagram of nested skills" />
+            <figcaption>Nested sub-skills form the lattice that supports a larger competence.</figcaption>
+          </figure>
+
+          <p>The second move is instrumentation. If you cannot see a skill, you cannot steer it, so the
+            engineer invents cheap proxies for progress: a rubric, a timed drill, a recurring artifact
+            that can be compared week over week. These signals do not need to be perfect; they need to
+            be consistent enough that trends become visible before they harden into habits.</p>
+
+          <p>The third move is deliberate friction. Comfortable repetition produces fluency at the
+            level you already own and almost nothing above it. The training loop therefore introduces
+            calibrated difficulty &mdash; slightly harder problems, tighter constraints, shorter clocks
+            &mdash; so that each session sits just past the edge of what feels automatic.</p>
+
+          <blockquote>Capability is not a mood you wait for; it is a system you build, inspect, and
+            tune until the results stop surprising you.</blockquote>
+
+          <p>Finally, the craft depends on recovery and consolidation. Skill is written during rest as
+            much as during effort, and an engineer who ignores sleep, spacing, and reflection is simply
+            leaking most of the gains they worked to produce. The loop closes when review feeds back
+            into decomposition, and the whole cycle begins again one level higher.</p>
+
+          <p>Approached this way, expertise loses its mystique. It becomes a designed artifact: a stack
+            of legible sub-skills, honest instruments, and a training loop that keeps every strand of
+            the rope under tension. That is the quiet promise of skill engineering.</p>
+        </div>
+      </div>
+
+      <div class="related">
+        <h3>More from PulseSim</h3>
+        <a href="/x">How to run a retro that people enjoy</a>
+        <a href="/y">The myth of the ten-thousand-hour shortcut</a>
+      </div>
+    </div>
+
+    <aside class="right-rail">
+      <div class="promo">People you may know</div>
+      <div class="ad">Promoted: The all-in-one team wiki.</div>
+    </aside>
+  </div>
+
+  <footer class="global-footer">
+    <a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>
+    <span>PulseSim &copy; 2026</span>
+  </footer>
+
+  <script>
+    // Simulate a page that reports the native reader as unavailable.
+    window.__nativeReaderBlocked = true;
+  </script>
+</body>
+</html>
