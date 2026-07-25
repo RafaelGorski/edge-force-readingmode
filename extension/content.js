@@ -191,11 +191,27 @@
 
   // ---- Helpers --------------------------------------------------------------
 
+  // Allowlist sanitizer. Prefer DOMPurify (vetted; correctly handles namespaced
+  // attributes like xlink:href, dangerous URI schemes, inline styles and
+  // mutation-XSS). Falls back to a hardened, fail-closed denylist only if
+  // DOMPurify somehow isn't loaded. URL scheme safety for any surviving
+  // src/href is enforced centrally in resolveResourceUrls().
   function sanitize(html) {
+    if (typeof DOMPurify !== "undefined" && DOMPurify && DOMPurify.sanitize) {
+      return DOMPurify.sanitize(html, {
+        FORBID_TAGS: ["style", "base", "form", "input", "button", "textarea", "select"],
+        FORBID_ATTR: ["style"],
+        ALLOW_DATA_ATTR: false,
+      });
+    }
+    return fallbackSanitize(html);
+  }
+
+  function fallbackSanitize(html) {
     var tpl = document.createElement("template");
     tpl.innerHTML = html;
     var strip = tpl.content.querySelectorAll(
-      "script, style, link, meta, noscript, iframe, object, embed, form, input, button"
+      "script, style, link, meta, base, noscript, iframe, object, embed, form, input, button, svg, math"
     );
     for (var i = 0; i < strip.length; i++) strip[i].remove();
 
@@ -205,9 +221,17 @@
       var attrs = Array.prototype.slice.call(el.attributes);
       for (var k = 0; k < attrs.length; k++) {
         var name = attrs[k].name.toLowerCase();
-        var value = (attrs[k].value || "").trim().toLowerCase();
-        if (name.indexOf("on") === 0) el.removeAttribute(attrs[k].name);
-        if ((name === "href" || name === "src") && value.indexOf("javascript:") === 0) {
+        // Drop event handlers, inline styles, srcset, and every namespaced
+        // attribute (e.g. xlink:href). Plain href/src are left for
+        // resolveResourceUrls(), which enforces a strict scheme allowlist.
+        if (
+          name.indexOf("on") === 0 ||
+          name === "style" ||
+          name === "srcset" ||
+          name === "formaction" ||
+          name === "action" ||
+          name.indexOf(":") !== -1
+        ) {
           el.removeAttribute(attrs[k].name);
         }
       }
@@ -215,7 +239,22 @@
     return tpl.innerHTML;
   }
 
-  // Make relative image/link URLs absolute so they load inside the overlay.
+  // Only http(s) are allowed for images; http(s)/mailto/tel for links. Data
+  // URIs are permitted for images only. Everything else (javascript:, vbscript:,
+  // arbitrary data:, etc.) is rejected AFTER URL normalization, so obfuscated
+  // schemes such as "jav\tascript:" cannot be reconstructed into live handlers.
+  function safeUrl(value, base, isImage) {
+    if (!value) return null;
+    try {
+      var u = new URL(value, base);
+      if (u.protocol === "http:" || u.protocol === "https:") return u.href;
+      if (isImage && u.protocol === "data:" && /^data:image\//i.test(u.href)) return u.href;
+      if (!isImage && (u.protocol === "mailto:" || u.protocol === "tel:")) return u.href;
+    } catch (e) {}
+    return null;
+  }
+
+  // Make relative image/link URLs absolute and enforce the scheme allowlist.
   function resolveResourceUrls(root) {
     var base = document.baseURI;
     var imgs = root.querySelectorAll("img");
@@ -224,22 +263,26 @@
       var src = img.getAttribute("src");
       var dataSrc = img.getAttribute("data-src") || img.getAttribute("data-delayed-url");
       if ((!src || src.indexOf("data:") === 0) && dataSrc) src = dataSrc;
-      if (src) {
-        try {
-          img.setAttribute("src", new URL(src, base).href);
-        } catch (e) {}
-      }
       img.removeAttribute("srcset");
-      img.setAttribute("loading", "eager");
-      img.setAttribute("referrerpolicy", "no-referrer");
+      var safeSrc = safeUrl(src, base, true);
+      if (safeSrc) {
+        img.setAttribute("src", safeSrc);
+        img.setAttribute("loading", "eager");
+        img.setAttribute("referrerpolicy", "no-referrer");
+      } else {
+        img.remove();
+      }
     }
     var links = root.querySelectorAll("a[href]");
     for (var j = 0; j < links.length; j++) {
-      try {
-        links[j].setAttribute("href", new URL(links[j].getAttribute("href"), base).href);
+      var safeHref = safeUrl(links[j].getAttribute("href"), base, false);
+      if (safeHref) {
+        links[j].setAttribute("href", safeHref);
         links[j].setAttribute("target", "_blank");
         links[j].setAttribute("rel", "noopener noreferrer");
-      } catch (e) {}
+      } else {
+        links[j].removeAttribute("href");
+      }
     }
   }
 

@@ -2,6 +2,7 @@ node_modules/
 screenshots/
 test-results/
 playwright-report/
+tests/fixtures-secret/
 .impeccable/
 .DS_Store
 *.log

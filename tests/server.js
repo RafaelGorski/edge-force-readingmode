@@ -21,8 +21,12 @@ const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent(req.url.split("?")[0]);
     let filePath = path.join(ROOT, urlPath);
     if (urlPath === "/" || urlPath === "") filePath = path.join(ROOT, "blocked-article.html");
-    // Prevent path traversal outside ROOT.
-    if (!path.resolve(filePath).startsWith(path.resolve(ROOT))) {
+    // Prevent path traversal outside ROOT (trailing separator guards against
+    // sibling directories whose name merely starts with the root, e.g.
+    // "<root>-secret").
+    const resolved = path.resolve(filePath);
+    const rootResolved = path.resolve(ROOT);
+    if (resolved !== rootResolved && !resolved.startsWith(rootResolved + path.sep)) {
       res.writeHead(403);
       res.end("Forbidden");
       return;

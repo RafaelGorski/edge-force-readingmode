@@ -1,5 +1,6 @@
 const os = require("os");
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const { test: base, expect, chromium } = require("@playwright/test");
 
@@ -126,6 +127,93 @@ test("activates via the Alt+R keyboard shortcut", async ({ page }) => {
       timeout: 8000,
     })
     .toBe(true);
+});
+
+test("neutralizes malicious markup without executing script", async ({ page }) => {
+  await page.goto("http://127.0.0.1:5178/xss-article.html", { waitUntil: "load" });
+
+  // Clear any counter the original page set for itself (e.g. its own broken
+  // <img onerror>), so we measure only what the reader overlay introduces.
+  await page.evaluate(() => {
+    window.__frmXss = 0;
+  });
+
+  expect(await tryActivate(page)).toBe(true);
+  await page.waitForTimeout(500);
+
+  const r = await page.evaluate(() => {
+    const host = document.getElementById("force-reading-mode-host");
+    const sr = host && host.shadowRoot;
+    const content = sr && sr.querySelector(".frm-content");
+    const all = content ? Array.from(content.querySelectorAll("*")) : [];
+    const anchors = content ? Array.from(content.querySelectorAll("a")) : [];
+    return {
+      xssFired: window.__frmXss || 0,
+      jsHrefs: anchors.filter((a) =>
+        (a.getAttribute("href") || "").toLowerCase().includes("javascript:")
+      ).length,
+      styledEls: content ? content.querySelectorAll("[style]").length : 0,
+      onHandlerEls: all.filter((el) =>
+        Array.prototype.some.call(el.attributes, (a) => a.name.toLowerCase().indexOf("on") === 0)
+      ).length,
+      svgCount: content ? content.querySelectorAll("svg").length : 0,
+      jsAttrs: all.filter((el) =>
+        Array.prototype.some.call(el.attributes, (a) =>
+          /(?:javascript|vbscript):/i.test(a.value || "")
+        )
+      ).length,
+      benignImg: content
+        ? content.querySelectorAll('img[src$="assets/diagram.svg"]').length
+        : 0,
+      textLen: content ? content.innerText.trim().length : 0,
+    };
+  });
+
+  // Nothing malicious survived, and no script ran when the overlay was built.
+  expect(r.xssFired).toBe(0);
+  expect(r.jsHrefs).toBe(0);
+  expect(r.styledEls).toBe(0);
+  expect(r.onHandlerEls).toBe(0);
+  // No dangerous URL scheme survives in ANY attribute (covers href, xlink:href
+  // inside the sanitized SVG, etc.).
+  expect(r.jsAttrs).toBe(0);
+  // Safe content is still rendered.
+  expect(r.textLen).toBeGreaterThan(400);
+  expect(r.benignImg).toBeGreaterThanOrEqual(1);
+});
+
+test("fixture server blocks sibling-directory path traversal", async () => {
+  const secretDir = path.join(__dirname, "fixtures-secret");
+  const secretFile = path.join(secretDir, "creds.txt");
+  fs.mkdirSync(secretDir, { recursive: true });
+  fs.writeFileSync(secretFile, "TOP_SECRET_TOKEN_should_not_leak");
+
+  const rawGet = (rawPath) =>
+    new Promise((resolve, reject) => {
+      const req = http.request(
+        { host: "127.0.0.1", port: 5178, path: rawPath, method: "GET" },
+        (res) => {
+          let body = "";
+          res.on("data", (c) => (body += c));
+          res.on("end", () => resolve({ status: res.statusCode, body }));
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+
+  try {
+    const legit = await rawGet("/blocked-article.html");
+    expect(legit.status).toBe(200);
+
+    // Raw (un-normalized) traversal into a sibling dir whose name starts with
+    // the served root — must be rejected, not leaked.
+    const evil = await rawGet("/../fixtures-secret/creds.txt");
+    expect(evil.status).toBe(403);
+    expect(evil.body).not.toContain("TOP_SECRET_TOKEN");
+  } finally {
+    fs.rmSync(secretDir, { recursive: true, force: true });
+  }
 });
 
 test("best-effort: extracts the real LinkedIn pulse article", async ({ page }) => {
