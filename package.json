@@ -12,6 +12,6 @@
   },
   "dependencies": {
     "@mozilla/readability": "^0.5.0",
-    "dompurify": "^3.4.12"
+    "dompurify": "^3.4.13"
   }
 }
